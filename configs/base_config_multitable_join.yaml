@@ -1,0 +1,136 @@
+app_name: hr-ai-mlops
+write_mode: overwrite
+
+mlflow:
+  enabled: true
+  experiment: /Shared/hr-ai-mlops
+  run_name: hr-ai-mlops-multitable-join
+  tags:
+    domain: hr
+    source_layer: gold
+    mapping_profile: multitable_join
+
+source:
+  # Multi-table Gold join profile using workbook-aligned model entities.
+  # Update catalog/schema/table names below if your environment differs.
+  sql_query: |
+    SELECT
+      w.`Employee_ID` AS employee_id,
+      w.`Snapshot_Date` AS snapshot_date,
+      CAST(w.`Attr_tenure` AS DOUBLE) AS tenure_months,
+      CAST(w.`Attr_change_in_inflation` AS DOUBLE) AS salary_change_pct,
+      CAST(w.`Attr_prmtn` AS DOUBLE) AS promotion_count_12m,
+      CAST(w.`Attr_rating_high` AS DOUBLE) AS performance_rating,
+      CAST(w.`Attr_mgr_change` AS DOUBLE) AS manager_changes_12m,
+      CAST(w.`Attr_ltral` AS DOUBLE) AS internal_moves_12m,
+      CAST(w.`HC_Total_Days_On_Leave` AS DOUBLE) AS absence_days_90d,
+      CAST(w.`Attr_OV_Engagement` AS DOUBLE) AS engagement_score,
+      w.`Location_Description` AS location,
+      COALESCE(j.`Job_Family`, w.`Employee_Function`) AS job_family,
+      CAST(w.`Potential` AS DOUBLE) AS top_performer_flag,
+      CAST(w.`Eligibility_for_Scorecard_Flag` AS DOUBLE) AS critical_role_flag,
+      CAST(w.`Attr_OV_Talent_Development` AS DOUBLE) AS leadership_pipeline_flag,
+      w.`Position_Title` AS current_role,
+      CAST(w.`FTE_Factor` AS DOUBLE) AS headcount,
+      CAST(w.`Attr_OV_Inclusion` AS DOUBLE) AS diversity_ratio,
+      CAST(COALESCE(c.`Base_Pay_Amount`, w.`Wage`) AS DOUBLE) AS compensation_amount,
+      COALESCE(c.`Supervisory_Current_Position_Pay_Grade`, w.`GS`) AS pay_band,
+      w.`HR_Sector` AS business_unit,
+      CAST(w.`Attr_prmtn` AS DOUBLE) AS hiring_velocity_score
+    FROM hr_gold.fact_workforce_snapshot w
+    LEFT JOIN hr_gold.fact_compensation_snapshot c
+      ON w.`Employee_ID` = c.`Employee_ID`
+     AND w.`Snapshot_Date` = c.`Snapshot_Date`
+    LEFT JOIN hr_gold.dim_employee e
+      ON w.`Employee_ID` = e.`Employee Id`
+    LEFT JOIN hr_gold.dim_job j
+      ON w.`Job_Code` = j.`ID`
+
+outputs:
+  attrition_table: hr_mlops.pred_attrition_risk
+  demand_forecast_table: hr_mlops.pred_workforce_demand
+  flight_risk_table: hr_mlops.pred_flight_risk
+  internal_mobility_table: hr_mlops.pred_internal_mobility
+  dei_forecast_table: hr_mlops.pred_dei_forecast
+  comp_anomaly_table: hr_mlops.pred_comp_anomaly
+  workforce_health_table: hr_mlops.pred_workforce_health
+
+column_mappings:
+  # Logical-to-physical mapping for the SQL projection above.
+  employee_id: employee_id
+  event_date: snapshot_date
+  tenure_months: tenure_months
+  salary_change_pct: salary_change_pct
+  promotion_count_12m: promotion_count_12m
+  performance_rating: performance_rating
+  manager_changes_12m: manager_changes_12m
+  internal_moves_12m: internal_moves_12m
+  absence_days_90d: absence_days_90d
+  engagement_score: engagement_score
+  location: location
+  job_family: job_family
+  top_performer_flag: top_performer_flag
+  critical_role_flag: critical_role_flag
+  leadership_pipeline_flag: leadership_pipeline_flag
+  current_role: current_role
+  headcount: headcount
+  diversity_ratio: diversity_ratio
+  compensation_amount: compensation_amount
+  pay_band: pay_band
+  business_unit: business_unit
+  hiring_velocity_score: hiring_velocity_score
+
+use_cases:
+  attrition:
+    features:
+      - tenure_months
+      - salary_change_pct
+      - promotion_count_12m
+      - performance_rating
+      - manager_changes_12m
+      - internal_moves_12m
+      - absence_days_90d
+      - engagement_score
+    weights: [0.6, 0.5, -0.7, -0.4, 0.7, -0.5, 0.6, -0.6]
+
+  workforce_demand:
+    date_col: event_date
+    headcount_col: headcount
+    growth_factor: 1.01
+
+  flight_risk:
+    top_performer_col: top_performer_flag
+    critical_role_col: critical_role_flag
+    leadership_pipeline_col: leadership_pipeline_flag
+    engagement_col: engagement_score
+
+  internal_mobility:
+    current_role_col: current_role
+    tenure_col: tenure_months
+    performance_col: performance_rating
+
+  dei_forecast:
+    date_col: event_date
+    diversity_ratio_col: diversity_ratio
+    improvement_rate: 0.01
+
+  comp_anomaly:
+    compensation_col: compensation_amount
+    pay_band_col: pay_band
+    medium_threshold: 1.5
+    high_threshold: 2.5
+
+  workforce_health_score:
+    business_unit_col: business_unit
+    absenteeism_col: absence_days_90d
+    engagement_col: engagement_score
+    hiring_velocity_col: hiring_velocity_score
+    weights:
+      attrition: 0.25
+      hiring_velocity: 0.15
+      engagement: 0.15
+      diversity: 0.15
+      absenteeism: 0.10
+      mobility: 0.10
+      flight_risk: 0.05
+      comp_anomaly: 0.05

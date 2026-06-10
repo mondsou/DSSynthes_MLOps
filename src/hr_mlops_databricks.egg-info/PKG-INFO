@@ -1,3 +1,13 @@
+Metadata-Version: 2.4
+Name: hr-mlops-databricks
+Version: 0.1.0
+Summary: Config-driven HR AI MLOps pipelines for Databricks
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: pyspark>=3.5.0
+Requires-Dist: PyYAML>=6.0.1
+Requires-Dist: mlflow>=2.14.0
+
 # HR AI MLOps on Databricks
 
 This project provides a **config-driven**, reusable Python codebase for HR AI MLOps on Databricks.
@@ -13,12 +23,6 @@ It reads curated data from the **Gold** layer, builds model outputs, and writes 
 6. Compensation Anomaly Detection
 7. Executive Workforce Health Score
 
-## Get Started
-
-**New to this project?** Start here:
-- **5-minute setup**: [QUICKSTART.md](QUICKSTART.md) - Get your pipeline running immediately
-- **Full deployment**: [DEPLOYMENT.md](DEPLOYMENT.md) - Complete step-by-step guide with all options and hardening
-
 ## Project Structure
 
 - `configs/base_config.yaml`: all table names, column mappings, and model options
@@ -29,8 +33,6 @@ It reads curated data from the **Gold** layer, builds model outputs, and writes 
 - `src/hr_mlops/models/use_cases.py`: model logic for all use cases
 - `jobs/run_databricks_job.py`: Databricks job entrypoint
 - `databricks.yml`: Databricks Asset Bundle job definition
-- `DEPLOYMENT.md`: End-to-end Databricks deployment guide (start here for production deployment)
-- `QUICKSTART.md`: 5-minute quick start guide for rapid deployment
 
 ## Run in Databricks
 
@@ -91,14 +93,3 @@ For multi-table Gold joins, use:
 ```bash
 python -m jobs.run_databricks_job --config configs/base_config_multitable_join.yaml
 ```
-
-## Deployment to Databricks
-
-For a complete step-by-step guide to deploying this pipeline in production Databricks, see **[DEPLOYMENT.md](DEPLOYMENT.md)**. This covers:
-- Gold layer setup and table initialization
-- Workspace configuration and schema creation
-- Job deployment via Databricks Bundle or UI
-- MLflow tracking setup
-- Scheduled recurring runs and monitoring
-- Performance optimization and hardening
-- Power BI semantic model integration

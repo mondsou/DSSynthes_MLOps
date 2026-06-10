@@ -1,0 +1,23 @@
+bundle:
+  name: hr-ai-mlops
+
+targets:
+  dev:
+    mode: development
+    default: true
+
+resources:
+  jobs:
+    hr_ai_mlops_pipeline:
+      name: hr_ai_mlops_pipeline
+      tasks:
+        - task_key: run_hr_ai_mlops
+          spark_python_task:
+            python_file: jobs/run_databricks_job.py
+            parameters:
+              - --config
+              - configs/base_config.yaml
+          new_cluster:
+            spark_version: 15.4.x-scala2.12
+            node_type_id: Standard_DS3_v2
+            num_workers: 2

@@ -1,0 +1,107 @@
+app_name: hr-ai-mlops
+write_mode: overwrite
+
+mlflow:
+  enabled: true
+  experiment: /Shared/hr-ai-mlops
+  run_name: hr-ai-mlops-powerbi-model
+  tags:
+    domain: hr
+    source_layer: gold
+    mapping_profile: powerbi_workbook
+
+source:
+  gold_hr_table: hr_gold.employee_curated
+  workbook_reference:
+    primary_model_sheet: Physical Model derived frm file
+    kpi_sheet: KPI
+
+outputs:
+  attrition_table: hr_mlops.pred_attrition_risk
+  demand_forecast_table: hr_mlops.pred_workforce_demand
+  flight_risk_table: hr_mlops.pred_flight_risk
+  internal_mobility_table: hr_mlops.pred_internal_mobility
+  dei_forecast_table: hr_mlops.pred_dei_forecast
+  comp_anomaly_table: hr_mlops.pred_comp_anomaly
+  workforce_health_table: hr_mlops.pred_workforce_health
+
+# Workbook uses business-friendly names like "Employee Id" and "Event Date".
+# Replace values below with exact Gold table column names in your Databricks schema.
+column_mappings:
+  employee_id: Employee Id
+  event_date: Event Date
+  tenure_months: Tenure Months
+  salary_change_pct: Salary Change Pct
+  promotion_count_12m: Promotion Count
+  performance_rating: Performance Rating
+  manager_changes_12m: Manager Changes 12M
+  internal_moves_12m: Lateral Move Count
+  absence_days_90d: Absence Days 90D
+  engagement_score: Engagement Score
+  location: Location
+  job_family: Job Family
+  top_performer_flag: Top Performer Flag
+  critical_role_flag: Critical Role Flag
+  leadership_pipeline_flag: Leadership Pipeline Flag
+  current_role: Current Role
+  headcount: Headcount
+  diversity_ratio: Diversity Ratio
+  compensation_amount: Compensation Amount
+  pay_band: Pay Band
+  business_unit: Business Unit
+  hiring_velocity_score: Hiring Velocity Score
+
+use_cases:
+  attrition:
+    features:
+      - tenure_months
+      - salary_change_pct
+      - promotion_count_12m
+      - performance_rating
+      - manager_changes_12m
+      - internal_moves_12m
+      - absence_days_90d
+      - engagement_score
+    weights: [0.6, 0.5, -0.7, -0.4, 0.7, -0.5, 0.6, -0.6]
+
+  workforce_demand:
+    date_col: event_date
+    headcount_col: headcount
+    growth_factor: 1.01
+
+  flight_risk:
+    top_performer_col: top_performer_flag
+    critical_role_col: critical_role_flag
+    leadership_pipeline_col: leadership_pipeline_flag
+    engagement_col: engagement_score
+
+  internal_mobility:
+    current_role_col: current_role
+    tenure_col: tenure_months
+    performance_col: performance_rating
+
+  dei_forecast:
+    date_col: event_date
+    diversity_ratio_col: diversity_ratio
+    improvement_rate: 0.01
+
+  comp_anomaly:
+    compensation_col: compensation_amount
+    pay_band_col: pay_band
+    medium_threshold: 1.5
+    high_threshold: 2.5
+
+  workforce_health_score:
+    business_unit_col: business_unit
+    absenteeism_col: absence_days_90d
+    engagement_col: engagement_score
+    hiring_velocity_col: hiring_velocity_score
+    weights:
+      attrition: 0.25
+      hiring_velocity: 0.15
+      engagement: 0.15
+      diversity: 0.15
+      absenteeism: 0.10
+      mobility: 0.10
+      flight_risk: 0.05
+      comp_anomaly: 0.05

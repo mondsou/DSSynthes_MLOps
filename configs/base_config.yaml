@@ -1,0 +1,105 @@
+app_name: hr-ai-mlops
+write_mode: overwrite
+
+mlflow:
+  enabled: true
+  experiment: /Shared/hr-ai-mlops
+  run_name: hr-ai-mlops-daily
+  tags:
+    domain: hr
+    source_layer: gold
+    target_layer: prediction
+
+source:
+  gold_hr_table: hr_gold.employee_curated
+  workbook_reference:
+    primary_model_sheet: Physical Model derived frm file
+    kpi_sheet: KPI
+
+outputs:
+  attrition_table: hr_mlops.pred_attrition_risk
+  demand_forecast_table: hr_mlops.pred_workforce_demand
+  flight_risk_table: hr_mlops.pred_flight_risk
+  internal_mobility_table: hr_mlops.pred_internal_mobility
+  dei_forecast_table: hr_mlops.pred_dei_forecast
+  comp_anomaly_table: hr_mlops.pred_comp_anomaly
+  workforce_health_table: hr_mlops.pred_workforce_health
+
+column_mappings:
+  employee_id: employee_id
+  event_date: snapshot_date
+  tenure_months: tenure_months
+  salary_change_pct: salary_change_pct
+  promotion_count_12m: promotion_count_12m
+  performance_rating: performance_rating
+  manager_changes_12m: manager_changes_12m
+  internal_moves_12m: internal_moves_12m
+  absence_days_90d: absence_days_90d
+  engagement_score: engagement_score
+  location: location
+  job_family: job_family
+  top_performer_flag: top_performer_flag
+  critical_role_flag: critical_role_flag
+  leadership_pipeline_flag: leadership_pipeline_flag
+  current_role: current_role
+  headcount: headcount
+  diversity_ratio: diversity_ratio
+  compensation_amount: compensation_amount
+  pay_band: pay_band
+  business_unit: business_unit
+  hiring_velocity_score: hiring_velocity_score
+
+use_cases:
+  attrition:
+    features:
+      - tenure_months
+      - salary_change_pct
+      - promotion_count_12m
+      - performance_rating
+      - manager_changes_12m
+      - internal_moves_12m
+      - absence_days_90d
+      - engagement_score
+    weights: [0.6, 0.5, -0.7, -0.4, 0.7, -0.5, 0.6, -0.6]
+
+  workforce_demand:
+    date_col: event_date
+    headcount_col: headcount
+    growth_factor: 1.01
+
+  flight_risk:
+    top_performer_col: top_performer_flag
+    critical_role_col: critical_role_flag
+    leadership_pipeline_col: leadership_pipeline_flag
+    engagement_col: engagement_score
+
+  internal_mobility:
+    current_role_col: current_role
+    tenure_col: tenure_months
+    performance_col: performance_rating
+
+  dei_forecast:
+    date_col: event_date
+    diversity_ratio_col: diversity_ratio
+    improvement_rate: 0.01
+
+  comp_anomaly:
+    compensation_col: compensation_amount
+    pay_band_col: pay_band
+    medium_threshold: 1.5
+    high_threshold: 2.5
+
+  workforce_health_score:
+    business_unit_col: business_unit
+    absenteeism_col: absence_days_90d
+    engagement_col: engagement_score
+    hiring_velocity_col: hiring_velocity_score
+    weights:
+      attrition: 0.25
+      hiring_velocity: 0.15
+      engagement: 0.15
+      diversity: 0.15
+      absenteeism: 0.10
+      mobility: 0.10
+      flight_risk: 0.05
+      comp_anomaly: 0.05

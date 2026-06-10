@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hr-mlops-databricks"
+version = "0.1.0"
+description = "Config-driven HR AI MLOps pipelines for Databricks"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "pyspark>=3.5.0",
+  "PyYAML>=6.0.1",
+  "mlflow>=2.14.0"
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
